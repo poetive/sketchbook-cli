@@ -1,0 +1,104 @@
+#!/bin/bash
+
+# How to extend regular git command with git sketch commands?
+
+# Commands
+# git sketch init
+# git sketch clone
+# git sketch status
+# git sketch fetch
+# git sketch pull
+# git sketch push
+# any other commands needed?
+
+# setup repo that ignores .sketch and previews/
+# git lfs for png/jpg assets - not artboard previews
+
+
+# Git Init
+# sketchinit(){}
+
+
+# Git Clone
+gitclonesketch(){
+  url=$1
+  command git clone $url
+  # wait - cos nie dziala.. nie czeka...
+  sketchFolders=( *--sketch )
+  for folder in $sketchFolders; do
+    sketchFile=$folder'.sketch'
+    cd $folder
+    zip -q -r -X $sketchFile *
+    mv $sketchFile ../${sketchFile/--sketch}
+    cd ..
+  done
+}
+
+# git status to see changes
+# first see text changes
+# second make text changes more meaningful or generate artboards?
+
+# sketchstatus(){
+#   command git status
+# }
+
+
+
+
+# Git Pull
+gitsketchpull(){
+  command git pull
+  wait
+  sketchFolders=( *--sketch )
+  for folder in $sketchFolders; do
+    sketchFile=$folder'.sketch'
+    cd $folder
+    zip -q -r -X $sketchFile *
+    mv $sketchFile ../${sketchFile/--sketch}
+    cd ..
+  done
+}
+
+
+# Hide sketch folders (clone, add, pull, status)
+gitsketchadd(){
+  sketchFile=${1/.sketch}
+  unzip -q -o $sketchFile.sketch -d $sketchFile'--sketch'
+  find . -name 'previews' -exec rm -r {} +
+  for file in $(find . -name '*.json'); do
+    python -m json.tool $file > tmp.$$.json
+    mv tmp.$$.json $file
+  done
+  git add $sketchFile'--sketch'/*
+}
+
+git push
+
+# Read
+# https://coderwall.com/p/bt93ia/extend-git-with-custom-commands
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Git Add
+
+# Test adding sketch to repo (files in main folder)
+# Test pulling sketch from repo (files in main folder)
+# Test adding sketch to repo (files in any folder)
+# Test pulling sketch from repo (files in any folder)
+# Test cloning sketch repo (files in main folder)
+# Test cloning sketch repo (files in any folder)
+
+
+
+
+
