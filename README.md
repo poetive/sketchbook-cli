@@ -1,1 +1,3 @@
-# sketchgit
+# Git Sketch
+
+Work in progress...
