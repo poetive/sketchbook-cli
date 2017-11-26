@@ -3,102 +3,7 @@
 # Releases via GitHub function
 
 # How to extend regular git command with git sketch commands?
-
-# Commands
-# git-sketch-init
-# git-sketch-clone
-# git-sketch-status
-# git-sketch-fetch
-# git-sketch-pull
-# git-sketch-add
-# git-sketch-push
-#
-# other commands?
-
-
-# Git Init
-git-sketch-init() {
-    command git init
-    touch .gitignore
-    echo 'previews' >> .gitignore
-    echo '.sketch' >> .gitignore
-    touch .gitattributes
-    echo '*.png filter=lfs diff=lfs merge=lfs -text' >> .gitattributes
-    echo '*.jpg filter=lfs diff=lfs merge=lfs -text' >> .gitattributes
-    echo '*.gif filter=lfs diff=lfs merge=lfs -text' >> .gitattributes
-    # unzip sketch files
-    # test gitlfs
-}
-
-# git-sketch-start() {
-    # combine git sketch init with adding/creating remote repo and initial push
-    # https://stackoverflow.com/questions/2423777/is-it-possible-to-create-a-remote-repo-on-github-from-the-cli-without-opening-br
-}
-
-
-
-# Git Clone
-git-sketch-clone() {
-    url=$1
-    command git clone $url
-    # wait - something's wrong here
-    sketchFolders=( *--sketch )
-    for folder in $sketchFolders; do
-        sketchFile=$folder'.sketch'
-        cd $folder
-        zip -q -r -X $sketchFile *
-        mv $sketchFile ../${sketchFile/--sketch}
-        cd ..
-    done
-}
-
-# git status to see changes
-# first see text changes
-# second make text changes more meaningful or generate artboards?
-
-git-sketch-status() {
-    # unzip sketch file
-    # if there are differences report them back and list sketch files changed with number of changes
-    command git status
-}
-
-git-sketch-fetch() {
-    command git fetch
-}
-
-
-# Git Pull
-git-sketch-pull() {
-    command git pull
-    wait
-    sketchFolders=( *--sketch )
-    for folder in $sketchFolders; do
-        sketchFile=$folder'.sketch'
-        cd $folder
-        zip -q -r -X $sketchFile *
-        mv $sketchFile ../${sketchFile/--sketch}
-        cd ..
-    done
-}
-
-
-# Hide sketch folders (clone, add, pull, status)
-git-sketch-add() {
-    sketchFile=${1/.sketch}
-    unzip -q -o $sketchFile.sketch -d $sketchFile'--sketch'
-    find . -name 'previews' -exec rm -r {} +
-    for file in $(find . -name '*.json'); do
-        python -m json.tool $file > tmp.$$.json
-        mv tmp.$$.json $file
-    done
-    command git add $sketchFile'--sketch'/*
-}
-
-git-sketch-push() {
-    command git push
-}
-
-
+# Test gitlfs on gitinit etc
 
 
 # Test adding sketch to repo (files in main folder)
@@ -108,7 +13,91 @@ git-sketch-push() {
 # Test cloning sketch repo (files in main folder)
 # Test cloning sketch repo (files in any folder)
 
+extractSketchFiles() {
+    echo 'Extracting Sketch files'
+    # hide sketch sketchFolders
+}
+
+buildSketchFiles() {
+    echo 'Building Sketch files...'
+    root="${PWD}"
+    sketchDirs=()
+    while IFS= read -r -d $'\0'; do
+        sketchDirs+=("$REPLY")
+    done < <(find . -type d -name "*--sketch" -print0)
+    for dir in $sketchDirs; do
+        cd $dir
+        dirName="${PWD##*/}"
+        sketchFile="${dirName/--sketch}.sketch"
+        echo "•" $sketchFile
+        zip -q -r -X $sketchFile *
+        mv $sketchFile ../${sketchFile}
+        cd $root
+    done
+}
 
 
 
 
+git-sketch-init() {
+    command git init
+    touch .gitignore
+    echo 'previews/' >> .gitignore
+    echo '.sketch' >> .gitignore
+    touch .gitattributes
+    echo '*.png filter=lfs diff=lfs merge=lfs -text' >> .gitattributes
+    echo '*.jpg filter=lfs diff=lfs merge=lfs -text' >> .gitattributes
+    echo '*.gif filter=lfs diff=lfs merge=lfs -text' >> .gitattributes
+    extractSketchFiles
+}
+
+git-sketch-new() {
+    # combine git sketch init with adding/creating remote repo and initial push
+    # https://stackoverflow.com/questions/2423777/is-it-possible-to-create-a-remote-repo-on-github-from-the-cli-without-opening-br
+}
+
+git-sketch-clone() {
+    url=$1
+    command git clone $url
+    # cd to repo directory?
+    buildSketchFiles
+}
+
+
+# git status to see changes
+# first see text changes
+# second make text changes more meaningful or generate artboards?
+git-sketch-status() {
+    extractSketchFiles
+    command git status
+    # if there are differences report them back and list sketch files changed with number of changes
+}
+
+git-sketch-fetch() {
+    command git fetch
+}
+
+git-sketch-pull() {
+    command git pull
+    # wait - does it wait until files are pulled?
+    buildSketchFiles
+}
+
+git-sketch-add() {
+    sketchFile=${1/.sketch}
+    unzip -q -o $sketchFile.sketch -d $sketchFile'--sketch'
+    for file in $(find . -name '*.json'); do
+        python -m json.tool $file > tmp.$$.json
+        mv tmp.$$.json $file
+    done
+    command git add $sketchFile'--sketch'/*
+}
+
+git-sketch-commit() {
+    # commit message
+    command git commit
+}
+
+git-sketch-push() {
+    command git push
+}
