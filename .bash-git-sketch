@@ -1,46 +1,56 @@
 #!/bin/bash
 
-# Releases via GitHub function
+# Info
+# 1. Close Sketch files before pushing or pulling changes
+# 2. Following scripts are usuful for an individual, not a team workflow
 
-# How to extend regular git command with git sketch commands?
-# Test gitlfs on gitinit etc
+# Scenarios
+# 1. Create git repository online and clone
+# 2. Create git repository locally and add remote origin
+# 3. Create git repository locally and create remote repository
+
+# To do
+# 1. Test adding sketch file from subfolder
+# 2. Fix extractSketchFiles script to iterate over directories
+# 3. Test gitlfs on git-sketch-init
 
 
-# Test adding sketch to repo (files in main folder)
-# Test pulling sketch from repo (files in main folder)
-# Test adding sketch to repo (files in any folder)
-# Test pulling sketch from repo (files in any folder)
-# Test cloning sketch repo (files in main folder)
-# Test cloning sketch repo (files in any folder)
-
+# TO FIX
+# extract only if files present
+# iterate over directories
 extractSketchFiles() {
-    echo 'Extracting Sketch files'
-    # hide sketch sketchFolders
+    echo 'Extracting Sketch file(s)...'
+    command unzip -q -o artboard.sketch -d artboard'--sketch'
+    for file in $(find . -name '*.json'); do
+        python -m json.tool $file > tmp.$$.json
+        mv tmp.$$.json $file
+    done
 }
 
 buildSketchFiles() {
-    echo 'Building Sketch files...'
+    echo 'Building Sketch file(s)...'
     root="${PWD}"
-    sketchDirs=()
+    sketchDirectories=()
     while IFS= read -r -d $'\0'; do
-        sketchDirs+=("$REPLY")
+        sketchDirectories+=("$REPLY")
     done < <(find . -type d -name "*--sketch" -print0)
-    for dir in $sketchDirs; do
-        cd $dir
-        dirName="${PWD##*/}"
-        sketchFile="${dirName/--sketch}.sketch"
-        echo "•" $sketchFile
+    for directory in $sketchDirectories; do
+        cd $directory
+        sketchFile=$(echo $directory | awk -F/ '{print $NF}' | sed -e 's/--sketch$//').sketch
         zip -q -r -X $sketchFile *
-        mv $sketchFile ../${sketchFile}
+        mv $sketchFile ../
+        echo "→" $sketchFile
         cd $root
     done
 }
 
-
-
+# git-sketch-new() {
+    # combine git sketch init with adding/creating remote repo and initial push
+    # https://stackoverflow.com/questions/2423777/is-it-possible-to-create-a-remote-repo-on-github-from-the-cli-without-opening-br
+# }
 
 git-sketch-init() {
-    command git init
+    git init
     touch .gitignore
     echo 'previews/' >> .gitignore
     echo '.sketch' >> .gitignore
@@ -51,53 +61,39 @@ git-sketch-init() {
     extractSketchFiles
 }
 
-git-sketch-new() {
-    # combine git sketch init with adding/creating remote repo and initial push
-    # https://stackoverflow.com/questions/2423777/is-it-possible-to-create-a-remote-repo-on-github-from-the-cli-without-opening-br
+git-sketch-origin() {
+    origin=$1
+    git remote add origin $origin
 }
 
 git-sketch-clone() {
     url=$1
-    command git clone $url
-    # cd to repo directory?
+    git clone $url
+    projectName=$(echo $url | awk -F/ '{print $NF}' | sed -e 's/.git$//')
+    cd $projectName
     buildSketchFiles
 }
 
-
-# git status to see changes
-# first see text changes
-# second make text changes more meaningful or generate artboards?
-git-sketch-status() {
-    extractSketchFiles
-    command git status
-    # if there are differences report them back and list sketch files changed with number of changes
-}
-
-git-sketch-fetch() {
-    command git fetch
-}
-
 git-sketch-pull() {
-    command git pull
-    # wait - does it wait until files are pulled?
+    git pull
     buildSketchFiles
 }
 
 git-sketch-add() {
     sketchFile=${1/.sketch}
-    unzip -q -o $sketchFile.sketch -d $sketchFile'--sketch'
-    for file in $(find . -name '*.json'); do
+    command unzip -q -o $sketchFile.sketch -d $sketchFile'--sketch'
+    for file in $(find . -maxdepth 1 -name '*.json'); do
         python -m json.tool $file > tmp.$$.json
         mv tmp.$$.json $file
     done
-    command git add $sketchFile'--sketch'/*
+    git add $sketchFile'--sketch'/*
 }
 
 git-sketch-commit() {
-    # commit message
-    command git commit
+    message=$1
+    git commit -m $message
 }
 
 git-sketch-push() {
-    command git push
+    git push
 }
