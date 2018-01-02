@@ -2,7 +2,7 @@
 
 # Info
 # 1. Close Sketch files before pushing or pulling changes
-# 2. Following scripts are usuful for an individual, not a team workflow
+# 2. Following scripts are useful for an individual, not a team workflow
 
 # Scenarios
 # 1. Create git repository online and clone
@@ -14,16 +14,35 @@
 # 2. Fix extractSketchFiles script to iterate over directories
 # 3. Test gitlfs on git-sketch-init
 
+# Simplify git commands
+# new
+# link
+# push
+# - add files
+# - add commit message
+# pull
 
-# TO FIX
-# extract only if files present
-# iterate over directories
+
+
+
 extractSketchFiles() {
     echo 'Extracting Sketch file(s)...'
-    command unzip -q -o artboard.sketch -d artboard'--sketch'
-    for file in $(find . -name '*.json'); do
-        python -m json.tool $file > tmp.$$.json
-        mv tmp.$$.json $file
+    root="${PWD}"
+    sketchFiles=()
+    while IFS= read -r -d $'\0'; do
+        sketchFiles+=("$REPLY")
+    done < <(find . -type f -name "*.sketch" -print0)
+    for file in $sketchFiles; do
+        directory=$(dirname "${file}")
+        filename=$(echo $file | awk -F/ '{print $NF}' | sed -e 's/.sketch$//')
+        cd $directory
+        command unzip -q -o $filename'.sketch' -d $filename'--sketch'
+        for file in $(find . -name '*.json'); do
+            python -m json.tool $file > tmp.$$.json
+            mv tmp.$$.json $file
+        done
+        echo "→" $filename'.sketch'
+        cd $root
     done
 }
 
