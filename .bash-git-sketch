@@ -13,16 +13,7 @@
 # 1. Test adding sketch file from subfolder
 # 2. Fix extractSketchFiles script to iterate over directories
 # 3. Test gitlfs on git-sketch-init
-
-# Simplify git commands
-# new
-# link
-# push
-# - add files
-# - add commit message
-# pull
-
-
+# does cloned repository have origin enabled? is local connected with remote?
 
 
 extractSketchFiles() {
@@ -63,56 +54,141 @@ buildSketchFiles() {
     done
 }
 
+
+
 # git-sketch-new() {
     # combine git sketch init with adding/creating remote repo and initial push
     # https://stackoverflow.com/questions/2423777/is-it-possible-to-create-a-remote-repo-on-github-from-the-cli-without-opening-br
 # }
 
-git-sketch-init() {
+sketchbook-init() {
     git init
     touch .gitignore
     echo 'previews/' >> .gitignore
-    echo '.sketch' >> .gitignore
+    echo '*.sketch' >> .gitignore
     touch .gitattributes
     echo '*.png filter=lfs diff=lfs merge=lfs -text' >> .gitattributes
     echo '*.jpg filter=lfs diff=lfs merge=lfs -text' >> .gitattributes
     echo '*.gif filter=lfs diff=lfs merge=lfs -text' >> .gitattributes
-    extractSketchFiles
+    git add .gitignore
+    git add .gitattributes
 }
 
-git-sketch-origin() {
-    origin=$1
-    git remote add origin $origin
+sketchbook-connect() {
+    while true; do
+        echo -n 'Remote to link with: '
+        read url
+        if [[ -z "${url// }" ]]
+        then
+            echo "Remote address can not be empty"
+            continue
+        else
+            git remote add origin $url
+        fi
+        break
+    done
 }
 
-git-sketch-clone() {
-    url=$1
-    git clone $url
-    projectName=$(echo $url | awk -F/ '{print $NF}' | sed -e 's/.git$//')
-    cd $projectName
-    buildSketchFiles
+sketchbook-clone() {
+    while true; do
+        echo -n 'Repository to clone from: '
+        read url
+        if [[ -z "${url// }" ]]
+        then
+            echo "Repository address can not be empty"
+            continue
+        else
+            git clone $url
+            repositoryName=$(echo $url | awk -F/ '{print $NF}' | sed -e 's/.git$//')
+            cd $repositoryName
+            sketchbook-init
+            buildSketchFiles
+        fi
+        break
+    done
 }
 
-git-sketch-pull() {
+sketchbook-pull() {
     git pull
     buildSketchFiles
 }
 
-git-sketch-add() {
-    sketchFile=${1/.sketch}
-    command unzip -q -o $sketchFile.sketch -d $sketchFile'--sketch'
-    for file in $(find . -maxdepth 1 -name '*.json'); do
-        python -m json.tool $file > tmp.$$.json
-        mv tmp.$$.json $file
+sketchbook-add() {
+    extractSketchFiles
+    find . -name "*--sketch" -type d | xargs git add
+}
+
+sketchbook-commit() {
+    while true; do
+        echo -n 'Commit message: '
+        read message
+        if [[ -z "${message// }" ]]
+        then
+            echo "Commit message can not be empty"
+            continue
+        else
+            git commit -m $message
+        fi
+        break
     done
-    git add $sketchFile'--sketch'/*
 }
 
-git-sketch-commit() {
-    message=$1
-    git commit -m $message
-}
-
-git-sketch-push() {
+sketchbook-push() {
     git push
+}
+
+
+
+
+
+sketchbook() {
+    if [[ $1 == "new" ]]
+    then
+        echo 'New repository created in:' ${PWD}
+        # echo 'Remote location:'
+        # To do
+
+    elif [[ $1 == "init" ]]
+    then
+        sketchbook-init
+        echo 'New repository initialised in:' ${PWD}
+        # Test needed
+
+    elif [[ $1 == "connect" ]]
+    then
+        sketchbook-connect
+        # Test needed
+
+    elif [[ $1 == "clone" ]]
+    then
+        sketchbook-clone
+        echo 'Repository cloned into:' ${PWD}
+        # Test needed
+
+    elif [[ $1 == "push" ]]
+    then
+        sketchbook-add
+        sketchbook-commit
+        sketchbook-push
+        # Test needed
+
+    elif [[ $1 == "pull" ]]
+    then
+        sketchbook-pull
+        # Test needed
+
+    elif [[ $1 == "help" || $1 == "--help" ]]
+    then
+        echo "List of all available sketchbook commands:"
+        echo "  new\t Create a new repository"
+        echo "  init\t Initialise repository for an existing directory"
+        echo "  connect\t Connect local repository with a remote one"
+        echo "  clone\t Clone remote repository into a new directory"
+        echo "  push\t Push changes to a remote repository"
+        echo "  pull\t Pull changes from a remote repository"
+
+    else
+        echo $1 "is not a valid command. See 'sketchbook --help'."
+
+    fi
 }
