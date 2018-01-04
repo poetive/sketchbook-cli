@@ -1,49 +1,50 @@
 #!/bin/bash
 
-# Info
-# 1. Close Sketch files before pushing or pulling changes
-# 2. Following scripts are useful for an individual, not a team workflow
+alias sb='sketchbook'
 
-# Scenarios
-# 1. Create git repository online and clone
-# 2. Create git repository locally and add remote origin
-# 3. Create git repository locally and create remote repository
-
-# To do
-# 1. Test adding sketch file from subfolder
-# 2. Fix extractSketchFiles script to iterate over directories
-# 3. Test gitlfs on git-sketch-init
-# does cloned repository have origin enabled? is local connected with remote?
-
-
-extractSketchFiles() {
-    echo 'Extracting Sketch file(s)...'
-    root="${PWD}"
-    sketchFiles=()
-    while IFS= read -r -d $'\0'; do
-        sketchFiles+=("$REPLY")
-    done < <(find . -type f -name "*.sketch" -print0)
-    for file in $sketchFiles; do
-        directory=$(dirname "${file}")
-        filename=$(echo $file | awk -F/ '{print $NF}' | sed -e 's/.sketch$//')
-        cd $directory
-        command unzip -q -o $filename'.sketch' -d $filename'--sketch'
-        for file in $(find . -name '*.json'); do
-            python -m json.tool $file > tmp.$$.json
-            mv tmp.$$.json $file
-        done
-        echo "→" $filename'.sketch'
-        cd $root
-    done
+sketchbook() {
+    if [[ $1 == "new" ]]
+    then
+        sketchbook-new
+    elif [[ $1 == "init" ]]
+    then
+        sketchbook-init
+    elif [[ $1 == "connect" ]]
+    then
+        sketchbook-connect
+    elif [[ $1 == "clone" ]]
+    then
+        sketchbook-clone
+    elif [[ $1 == "push" ]]
+    then
+        sketchbook-push
+    elif [[ $1 == "pull" ]]
+    then
+        sketchbook-pull
+    elif [[ $1 == "help" || $1 == "--help" ]]
+    then
+        echo "List of all available sketchbook commands:"
+        echo "  new\t Create a new repository"
+        echo "  init\t Initialise repository for an existing directory"
+        echo "  connect\t Connect local repository with a remote one"
+        echo "  clone\t Clone remote repository into a new directory"
+        echo "  push\t Push changes to a remote repository"
+        echo "  pull\t Pull changes from a remote repository"
+    else
+        echo $1 "is not a valid command. See 'sketchbook --help'."
+    fi
 }
 
-buildSketchFiles() {
+
+sketchbook-build() {
     echo 'Building Sketch file(s)...'
     root="${PWD}"
+    # Create an array with sketch directories
     sketchDirectories=()
     while IFS= read -r -d $'\0'; do
         sketchDirectories+=("$REPLY")
     done < <(find . -type d -name "*--sketch" -print0)
+    # Create sketch file for each sketch directory in array
     for directory in $sketchDirectories; do
         cd $directory
         sketchFile=$(echo $directory | awk -F/ '{print $NF}' | sed -e 's/--sketch$//').sketch
@@ -55,42 +56,9 @@ buildSketchFiles() {
 }
 
 
-
-# git-sketch-new() {
-    # combine git sketch init with adding/creating remote repo and initial push
-    # https://stackoverflow.com/questions/2423777/is-it-possible-to-create-a-remote-repo-on-github-from-the-cli-without-opening-br
-# }
-
-sketchbook-init() {
-    git init
-    touch .gitignore
-    echo 'previews/' >> .gitignore
-    echo '*.sketch' >> .gitignore
-    touch .gitattributes
-    echo '*.png filter=lfs diff=lfs merge=lfs -text' >> .gitattributes
-    echo '*.jpg filter=lfs diff=lfs merge=lfs -text' >> .gitattributes
-    echo '*.gif filter=lfs diff=lfs merge=lfs -text' >> .gitattributes
-    git add .gitignore
-    git add .gitattributes
-}
-
-sketchbook-connect() {
-    while true; do
-        echo -n 'Remote to link with: '
-        read url
-        if [[ -z "${url// }" ]]
-        then
-            echo "Remote address can not be empty"
-            continue
-        else
-            git remote add origin $url
-        fi
-        break
-    done
-}
-
 sketchbook-clone() {
     while true; do
+        # Specify url to clone from
         echo -n 'Repository to clone from: '
         read url
         if [[ -z "${url// }" ]]
@@ -98,97 +66,150 @@ sketchbook-clone() {
             echo "Repository address can not be empty"
             continue
         else
+            # Clone and initialise repository
             git clone $url
             repositoryName=$(echo $url | awk -F/ '{print $NF}' | sed -e 's/.git$//')
             cd $repositoryName
-            sketchbook-init
-            buildSketchFiles
+            sketchbook-build
+            echo 'Repository cloned into:' ${PWD}
         fi
         break
     done
 }
+
+
+sketchbook-connect() {
+    while true; do
+        # Specify remote url
+        echo -n 'Remote to link with: '
+        read url
+        if [[ -z "${url// }" ]]
+        then
+            echo "Remote address can not be empty"
+            continue
+        else
+            # Set remote url as origin
+            git remote add origin $url
+        fi
+        break
+    done
+}
+
+
+sketchbook-extract() {
+    echo 'Extracting Sketch file(s)...'
+    root="${PWD}"
+    # Create an array with sketch files
+    sketchFiles=()
+    while IFS= read -r -d $'\0'; do
+        sketchFiles+=("$REPLY")
+    done < <(find . -type f -name "*.sketch" -print0)
+    # Create sketch directory for each sketch file in array
+    for file in $sketchFiles; do
+        directory=$(dirname "${file}")
+        filename=$(echo $file | awk -F/ '{print $NF}' | sed -e 's/.sketch$//')
+        cd $directory
+        command unzip -q -o $filename'.sketch' -d $filename'--sketch'
+        # Prettify json files
+        for file in $(find . -name '*.json'); do
+            python -m json.tool $file > tmp.$$.json
+            mv tmp.$$.json $file
+        done
+        echo "→" $filename'.sketch'
+        cd $root
+    done
+}
+
+
+sketchbook-init() {
+    # Initialise repository
+    git init
+    # Ignore specific files and folders
+    touch .gitignore
+    echo 'previews/' >> .gitignore
+    echo '*.sketch' >> .gitignore
+    # Initialise large file storage
+    touch .gitattributes
+    echo '*.png filter=lfs diff=lfs merge=lfs -text' >> .gitattributes
+    echo '*.jpg filter=lfs diff=lfs merge=lfs -text' >> .gitattributes
+    echo '*.gif filter=lfs diff=lfs merge=lfs -text' >> .gitattributes
+    # Stage and commit configuration
+    git add .gitignore
+    git add .gitattributes
+    git commit -m '[Chore] Configure repository'
+}
+
+
+sketchbook-new() {
+    while true; do
+        # Create new project
+        echo -n 'Project name: '
+        read project
+        if [[ -z "${project// }" ]]
+        then
+            echo "Project name can not be empty"
+            continue
+        else
+            # Create project directory
+            mkdir $project
+            cd $project
+            # Initialise repository
+            sketchbook-init
+            # Create readme file
+            touch README.MD
+            echo '#' $project >> README.MD
+            # Stage and commit readme file
+            git add README.MD
+            git commit -m '[Docs] Add README.MD'
+            # Create remote repository
+            echo -n 'Create remote repository on GitHub? <y/n>: '
+            read remote
+            if [[ ${remote} == "y" || ${remote} == "Y" || ${remote} == "yes" || ${remote} == "Yes" ]]
+            then
+                echo -n 'GitHub username: '
+                read username
+                curl -u "$username" https://api.github.com/user/repos -d '{"name":"'$project'"}'
+                git remote add origin git@github.com:$username/$project.git
+                git push -u origin master
+                echo '→ Local repository location:' ${PWD}
+                echo '→ Remote repository address: https://github.com/'$username'/'$project
+            fi
+        fi
+        break
+    done
+}
+
 
 sketchbook-pull() {
     git pull
-    buildSketchFiles
+    sketchbook-build
 }
 
-sketchbook-add() {
-    extractSketchFiles
-    find . -name "*--sketch" -type d | xargs git add
-}
-
-sketchbook-commit() {
-    while true; do
-        echo -n 'Commit message: '
-        read message
-        if [[ -z "${message// }" ]]
-        then
-            echo "Commit message can not be empty"
-            continue
-        else
-            git commit -m $message
-        fi
-        break
-    done
-}
 
 sketchbook-push() {
-    git push
-}
-
-
-
-
-
-sketchbook() {
-    if [[ $1 == "new" ]]
+    # Stage files to commit
+    sketchbook-extract
+    if [[ -z "$sketchFiles" ]]
     then
-        echo 'New repository created in:' ${PWD}
-        # echo 'Remote location:'
-        # To do
-
-    elif [[ $1 == "init" ]]
-    then
-        sketchbook-init
-        echo 'New repository initialised in:' ${PWD}
-        # Test needed
-
-    elif [[ $1 == "connect" ]]
-    then
-        sketchbook-connect
-        # Test needed
-
-    elif [[ $1 == "clone" ]]
-    then
-        sketchbook-clone
-        echo 'Repository cloned into:' ${PWD}
-        # Test needed
-
-    elif [[ $1 == "push" ]]
-    then
-        sketchbook-add
-        sketchbook-commit
-        sketchbook-push
-        # Test needed
-
-    elif [[ $1 == "pull" ]]
-    then
-        sketchbook-pull
-        # Test needed
-
-    elif [[ $1 == "help" || $1 == "--help" ]]
-    then
-        echo "List of all available sketchbook commands:"
-        echo "  new\t Create a new repository"
-        echo "  init\t Initialise repository for an existing directory"
-        echo "  connect\t Connect local repository with a remote one"
-        echo "  clone\t Clone remote repository into a new directory"
-        echo "  push\t Push changes to a remote repository"
-        echo "  pull\t Pull changes from a remote repository"
-
+        echo 'There are no Sketch files to commit'
     else
-        echo $1 "is not a valid command. See 'sketchbook --help'."
-
+        find . -name "*--sketch" -type d | xargs git add
+        # Commit staged files
+        while true; do
+            echo -n 'Commit message: '
+            read message
+            if [[ -z "${message// }" ]]
+            then
+                echo "Commit message can not be empty"
+                continue
+            else
+                git commit -m $message
+            fi
+            break
+        done
+        # Stage deleted files
+        git status -s | grep -E '^ D' | cut -d ' ' -f3 | xargs git add --all
+        # Push changes to remote
+        git push
     fi
 }
