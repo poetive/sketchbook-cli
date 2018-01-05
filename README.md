@@ -11,42 +11,41 @@ Sketchbook enhances available Git commands to support storing Sketch files in hu
 ## Usage
 
 ### Create project
-Creates new local repository and a remote one on GitHub.
 
 ```
 sketchbook new
 ```
+Creates new local repository and a remote one on GitHub.
 
 ### Clone project
-Clones existing remote repository into current working directory.
 
 ```
 sketchbook clone
 ```
+Clones existing remote repository into current working directory.
 
 ### Push changes
-Adds, commits and pushes project files into a remote repository.
 
 ```
 sketchbook push
 ```
+Adds, commits and pushes project files into a remote repository.
 
 ### Pull changes
-Pulls changed files from a remote repository.
 
 ```
 sketchbook pull
 ``` 
-
+Pulls changed files from a remote repository.
 
 ## Other commands
 
 ### Initialise repository
-Initialises a repository for an existing project.
 
 ```
 sketchbook init
 ```
+Initialises a repository for an existing project.
 
 ### Connect repositories
 
