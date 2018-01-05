@@ -1,6 +1,6 @@
 # Sketchbook
 
-Sketchbook enhances available Git commands to support storing Sketch files in human readable format (JSON). Sketchbook configuration takes advantage of Git LFS to store bitmaps included in Sketch files (.png, .jpg, .gif).
+Sketchbook enhances available Git commands to support storing Sketch files in human readable format (JSON). The configuration takes advantage of Git LFS to store bitmaps included in Sketch files (.png, .jpg, .gif).
 
 
 ## Installation
