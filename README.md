@@ -49,12 +49,11 @@ sketchbook init
 ```
 
 ### Connect repositories
-Connects existing local repository with a remote one.
 
 ```
 sketchbook connect
 ```
-
+Connects existing local repository with a remote one.
 
 ## License
 [MIT](http://opensource.org/licenses/MIT)
