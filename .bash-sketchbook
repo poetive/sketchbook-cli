@@ -6,15 +6,15 @@ sketchbook() {
     if [[ $1 == "new" ]]
     then
         sketchbook-new
+    elif [[ $1 == "clone" ]]
+    then
+        sketchbook-clone
     elif [[ $1 == "init" ]]
     then
         sketchbook-init
     elif [[ $1 == "connect" ]]
     then
         sketchbook-connect
-    elif [[ $1 == "clone" ]]
-    then
-        sketchbook-clone
     elif [[ $1 == "push" ]]
     then
         sketchbook-push
