@@ -24,12 +24,13 @@ sketchbook() {
     elif [[ $1 == "help" || $1 == "--help" ]]
     then
         echo "List of all available sketchbook commands:"
-        echo "  new\t Create a new repository"
-        echo "  init\t Initialise repository for an existing directory"
-        echo "  connect\t Connect local repository with a remote one"
-        echo "  clone\t Clone remote repository into a new directory"
-        echo "  push\t Push changes to a remote repository"
-        echo "  pull\t Pull changes from a remote repository"
+        echo "  new\t Creates new local repository and a remote one on GitHub or Bitbucket"
+        echo "  clone\t Clones existing remote repository into current working directory"
+        echo "  push\t Adds, commits and pushes project files into a remote repository"
+        echo "  pull\t Pulls changed files from a remote repository"
+        echo ""
+        echo "  init\t Initialises a repository for an existing project"
+        echo "  connect\t Connects existing local repository with a remote one"
     else
         echo $1 "is not a valid command. See 'sketchbook --help'."
     fi
@@ -160,11 +161,24 @@ sketchbook-new() {
             echo '#' $project >> README.MD
             # Stage and commit readme file
             git add README.MD
-            git commit -m '[Docs] Add README.MD'
+            git commit -m '[Docs] Add readme.md'
             # Create remote repository
-            echo -n 'Create remote repository on GitHub? <y/n>: '
+            echo 'Create remote repository?'
+            echo 'b - bitbucket'
+            echo 'g - github'
+            echo 'n - nope'
+            echo -n
             read remote
-            if [[ ${remote} == "y" || ${remote} == "Y" || ${remote} == "yes" || ${remote} == "Yes" ]]
+            if [[ ${remote} == "b" || ${remote} == "B" || ${remote} == "bitbucket" || ${remote} == "Bitbucket" ]]
+            then
+                echo -n 'Bitbucket username: '
+                read username
+                curl --user $username https://api.bitbucket.org/1.0/repositories/ --data name=$project --data is_private='true'
+                git remote add origin git@bitbucket.org:$username/$project.git
+                git push -u origin master
+                echo '→ Local repository location:' ${PWD}
+                echo '→ Remote repository address: https://github.com/'$username'/'$project
+            elif [[ ${remote} == "g" || ${remote} == "G" || ${remote} == "github" || ${remote} == "Github" ]]
             then
                 echo -n 'GitHub username: '
                 read username
@@ -173,6 +187,8 @@ sketchbook-new() {
                 git push -u origin master
                 echo '→ Local repository location:' ${PWD}
                 echo '→ Remote repository address: https://github.com/'$username'/'$project
+            else
+                echo "\nIf you will create a remote repository later, \nyou can use 'sketchbook connect' to link them together."
             fi
         fi
         break
