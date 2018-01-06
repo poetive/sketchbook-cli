@@ -15,7 +15,7 @@ Sketchbook enhances available Git commands to support storing Sketch files in hu
 ```
 sketchbook new
 ```
-Creates new local repository and a remote one on GitHub.
+Creates new local repository and a remote one on GitHub or Bitbucket.
 
 ### Clone project
 
@@ -35,7 +35,7 @@ Adds, commits and pushes project files into a remote repository.
 
 ```
 sketchbook pull
-``` 
+```
 Pulls changed files from a remote repository.
 
 ## Other commands
