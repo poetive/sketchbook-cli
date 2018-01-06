@@ -179,7 +179,7 @@ sketchbook-new() {
                 git remote add origin git@bitbucket.org:$username/$project.git
                 git push -u origin master
                 echo '→ Local repository location:' ${PWD}
-                echo '→ Remote repository address: https://github.com/'$username'/'$project
+                echo '→ Remote repository address: https://bitbucket.com/'$username'/'$project
             elif [[ ${remote} == "g" || ${remote} == "G" || ${remote} == "github" || ${remote} == "Github" ]]
             then
                 echo -n 'GitHub username: '
