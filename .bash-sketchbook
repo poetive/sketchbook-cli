@@ -164,16 +164,18 @@ sketchbook-new() {
             git commit -m '[Docs] Add readme.md'
             # Create remote repository
             echo 'Create remote repository?'
-            echo 'b - bitbucket'
-            echo 'g - github'
-            echo 'n - nope'
+            echo '(b) bitbucket'
+            echo '(g) github'
+            echo '(n) nope'
             echo -n
             read remote
             if [[ ${remote} == "b" || ${remote} == "B" || ${remote} == "bitbucket" || ${remote} == "Bitbucket" ]]
             then
                 echo -n 'Bitbucket username: '
                 read username
+                # to do: ask user if repository should be private or public and set correct flag
                 curl --user $username https://api.bitbucket.org/1.0/repositories/ --data name=$project --data is_private='true'
+                # to do: check if user has authenticated successfully
                 git remote add origin git@bitbucket.org:$username/$project.git
                 git push -u origin master
                 echo '→ Local repository location:' ${PWD}
@@ -182,6 +184,7 @@ sketchbook-new() {
             then
                 echo -n 'GitHub username: '
                 read username
+                # to do: ask user if repository should be private or public and set correct flag
                 curl -u "$username" https://api.github.com/user/repos -d '{"name":"'$project'"}'
                 git remote add origin git@github.com:$username/$project.git
                 git push -u origin master
@@ -205,27 +208,22 @@ sketchbook-pull() {
 sketchbook-push() {
     # Stage files to commit
     sketchbook-extract
-    if [[ -z "$sketchFiles" ]]
-    then
-        echo 'There are no Sketch files to commit'
-    else
-        find . -name "*--sketch" -type d | xargs git add
-        # Commit staged files
-        while true; do
-            echo -n 'Commit message: '
-            read message
-            if [[ -z "${message// }" ]]
-            then
-                echo "Commit message can not be empty"
-                continue
-            else
-                git commit -m $message
-            fi
-            break
-        done
-        # Stage deleted files
-        git status -s | grep -E '^ D' | cut -d ' ' -f3 | xargs git add --all
-        # Push changes to remote
-        git push
-    fi
+    git add .
+    # Stage deleted files
+    git status -s | grep -E '^ D' | cut -d ' ' -f3 | xargs git add --all
+    # Commit staged files
+    while true; do
+        echo -n 'Commit message: '
+        read message
+        if [[ -z "${message// }" ]]
+        then
+            echo "Commit message can not be empty"
+            continue
+        else
+            git commit -m $message
+        fi
+        break
+    done
+    # Push changes to remote
+    git push
 }
