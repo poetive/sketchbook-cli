@@ -10,6 +10,8 @@ Sketchbook enhances available Git commands to support storing Sketch files in hu
 
 ## Usage
 
+Remember to close Sketch files before pushing or pulling changes.
+
 ### Create project
 
 ```
