@@ -159,6 +159,7 @@ sketchbook-new() {
             # Create readme file
             touch README.MD
             echo '#' $project >> README.MD
+            echo 'Use [Sketchbook](getsketchbook.com) to contribute to this repository.'
             # Stage and commit readme file
             git add README.MD
             git commit -m '[Docs] Add readme.md'
@@ -173,13 +174,15 @@ sketchbook-new() {
             then
                 echo -n 'Bitbucket username: '
                 read username
+                echo -n 'Repository owner: '
+                read owner
                 # to do: ask user if repository should be private or public and set correct flag
-                curl --user $username https://api.bitbucket.org/1.0/repositories/ --data name=$project --data is_private='true'
+                curl --user $username https://api.bitbucket.org/1.0/repositories/ --data name=$project --data is_private='true' --data owner=$owner
                 # to do: check if user has authenticated successfully
-                git remote add origin git@bitbucket.org:$username/$project.git
+                git remote add origin git@bitbucket.org:$owner/$project.git
                 git push -u origin master
                 echo '→ Local repository location:' ${PWD}
-                echo '→ Remote repository address: https://bitbucket.com/'$username'/'$project
+                echo '→ Remote repository address: https://bitbucket.org/'$owner'/'$project
             elif [[ ${remote} == "g" || ${remote} == "G" || ${remote} == "github" || ${remote} == "Github" ]]
             then
                 echo -n 'GitHub username: '
